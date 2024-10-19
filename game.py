@@ -7,13 +7,13 @@ from Balloon import BlueBalloon as BB
 
 pygame.init()
 
-
 towers = []
 balloons = []
 
 # Initialize timing variables
+
 balloon_index = 0
-balloon_spawn_interval = 500  # Time in milliseconds between spawns (1 second)
+balloon_spawn_interval = 400  # Time in milliseconds between spawns (1 second)
 last_balloon_spawn_time = 0  # Start at 0
 
 # Create a clock object to control frame rate
@@ -31,13 +31,28 @@ selection_area = pygame.Rect(selection_area_x, selection_area_y, selection_area_
 is_dragging = False
 selected_tower = DartMonkey()  # Set the tower type to place
 
+
 # Create a queue of balloons based on LEVEL1
 balloon_queue = []
-for type in const.LEVEL1:
-    if type[1] == 'r':
-        balloon_queue.extend([RB() for _ in range(type[0])])
-    elif type[1] == 'b':
-        balloon_queue.extend([BB() for _ in range(type[0])])
+
+
+def draw_money():
+    money_text = const.font.render(f'Money: ${const.current_money}', True, (255, 255, 255))  # White color
+    const.screen.blit(money_text, (120, 10))  # Position at top left corner
+
+
+def draw_health():
+    health_text = const.font.render(f'Health: {const.current_health}', True, (255, 255, 255))  # White color
+    const.screen.blit(health_text, (10, 10))  # Position at top left corner
+
+
+def initialize_level_one():
+    for type in const.LEVEL1:
+        if type[1] == 'r':
+            balloon_queue.extend([RB() for _ in range(type[0])])
+        elif type[1] == 'b':
+            balloon_queue.extend([BB() for _ in range(type[0])])
+
 
 running = True
 selected_tower_for_range = None  # Track which tower's range to show
@@ -75,8 +90,9 @@ while running:
                 x, y = event.pos
                 x = x // const.CELL_SIZE * const.CELL_SIZE
                 y = y // const.CELL_SIZE * const.CELL_SIZE
-                if selected_tower.is_valid_tower_placement(x, y):
+                if selected_tower.is_valid_tower_placement(x, y) and const.current_money - 215 >=0:
                     towers.append((selected_tower, x, y))
+                    const.current_money -= 215
 
     # Clear the screen
     const.screen.fill((0, 0, 0))
@@ -90,13 +106,20 @@ while running:
             balloons.append(balloon_queue[balloon_index])
             balloon_index += 1
             last_balloon_spawn_time = current_time  # Reset the spawn timer
+    else:
+        balloon_index = 0
+        initialize_level_one()
+        const.current_money += const.level_money
 
     # Move and draw balloons
     for balloon in balloons[:]:  # Iterate over a copy of the list
         balloon.move(delta_time)  # Pass delta_time to adjust movement speed
         balloon.draw(const.screen)
-        if balloon.is_out_of_bounds() or balloon.health <= 0:
+        if balloon.is_out_of_bounds():
             balloons.remove(balloon)  # Remove the balloon if destroyed or out of bounds
+            const.current_health -= balloon.health
+        if balloon.health <= 0:
+            balloons.remove(balloon)
 
     # Draw all towers from the list
     for tower, x, y in towers:
@@ -112,6 +135,21 @@ while running:
         for tower, x, y in towers:
             if tower == selected_tower_for_range:
                 tower.draw_range()  # Show range of the selected tower
+
+    # Checking for balloons to attack
+    for tower, x, y in towers:
+        balloon_in_range = tower.is_balloon_in_range(balloons)
+
+        if balloon_in_range:
+            tower.attack(balloon_in_range)
+            # Perform action like attacking this balloon
+
+    # Draw the amount of money
+    draw_money()
+    # Draw health
+    draw_health()
+    if const.current_health == 0:
+        break
     # Update the display
     pygame.display.flip()
 
