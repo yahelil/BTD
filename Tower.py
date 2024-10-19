@@ -1,5 +1,5 @@
 import math
-
+import time
 import pygame
 from Constants import Constants as const
 
@@ -10,6 +10,7 @@ class Tower:
         self.speed = None
         self.damage = None
         self.range = None
+        self.last_shot_time = 0
         self.x = None
         self.y = None
 
@@ -35,25 +36,34 @@ class Tower:
         # Draw the circle at the center of the tower, with the range as the radius
         pygame.draw.circle(const.screen, (0, 0, 255), (center_x, center_y), self.range, 1)  # Blue circle, 1 pixel thick
 
-    def is_balloon_in_range(self, balloon):
-        # Calculate the distance between the tower and the balloon
-        distance = math.sqrt((balloon.x - self.x) ** 2 + (balloon.y - self.y) ** 2)
+    def is_balloon_in_range(self, balloons):
+        for balloon in balloons:
+            # Calculate the distance between the tower and the balloon
+            distance = math.sqrt((balloon.x - self.x) ** 2 + (balloon.y - self.y) ** 2)
 
-        # Check if the distance is within the tower's range
-        return distance <= self.range
+            # Check if the distance is within the tower's range
+            if distance <= self.range:
+                return balloon
+        return None
+
+    def attack(self, balloon):
+        current_time = time.time()
+        if current_time - self.last_shot_time >= 1/self.speed:  # Check if enough time has passed since last shot
+            if balloon:
+                balloon.take_damage(self.damage)
+                const.current_money += self.damage
+                self.last_shot_time = current_time  # Update the last shot time
+
 
 class DartMonkey(Tower):
     def __init__(self):
         super().__init__()
         self.image = pygame.image.load(f'images/dartmonkey.png')
         self.image = pygame.transform.scale(self.image, (const.CELL_SIZE, const.CELL_SIZE))  # Scale to cell size
-        self.speed = 1  # A dart per second
+        self.speed = 2  # A dart per second
         self.damage = 1  # Deals 1 damage per hit
-        self.range = 80  # Radius of 32 pixels
-
-    def attack(self):
-        # Define specific attack behavior for DartMonkey
-        pass  # Implement your attack logic here
+        self.range = 100  # Radius of 32 pixels
+        self.last_shot_time = time.time()  # Track the last time it shot
 
     def upgrade(self):
         # Define upgrade behavior for DartMonkey
