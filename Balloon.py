@@ -13,25 +13,27 @@ class Balloon:
         self.x *= const.CELL_SIZE
         self.y *= const.CELL_SIZE
 
-    def move(self):
+    def move(self, delta_time):
+        tolerance = 2  # Allow for minor discrepancies in position to avoid getting stuck
         if self.current_point_index < len(const.path) - 1:
-            # Calculate direction to the next point
             next_x, next_y = const.path[self.current_point_index + 1]
-            next_y *= const.CELL_SIZE
             next_x *= const.CELL_SIZE
-            # Move towards the next point
-            if self.x < next_x:
-                self.x += self.speed  # Move right
-            elif self.x > next_x:
-                self.x -= self.speed  # Move left
-            if self.y < next_y:
-                self.y += self.speed  # Move down
-            elif self.y > next_y:
-                self.y -= self.speed  # Move up
+            next_y *= const.CELL_SIZE
 
-            # Check if the balloon has reached the next point
-            if (self.x, self.y) == (next_x, next_y):
+            # Move towards the next point, adjusting by delta_time
+            if self.x < next_x - tolerance:
+                self.x += self.speed * delta_time
+            elif self.x > next_x + tolerance:
+                self.x -= self.speed * delta_time
+            if self.y < next_y - tolerance:
+                self.y += self.speed * delta_time
+            elif self.y > next_y + tolerance:
+                self.y -= self.speed * delta_time
+
+            # Check if balloon is close enough to the next point to count as "arrived"
+            if abs(self.x - next_x) < tolerance and abs(self.y - next_y) < tolerance:
                 self.current_point_index += 1  # Move to the next point
+
         if self.is_out_of_bounds():
             self.destroy()
 
@@ -60,7 +62,7 @@ class RedBalloon(Balloon):
         super().__init__()
         self.image = pygame.image.load('images/redballoon.png')  # Path to your balloon image
         self.image = pygame.transform.scale(self.image, (const.CELL_SIZE, const.CELL_SIZE))  # Scale to cell size
-        self.speed = 4  # Speed at which the balloon moves
+        self.speed = 150  # Speed at which the balloon moves
         self.health = 1  # Health of the balloon
 
 
@@ -69,5 +71,5 @@ class BlueBalloon(Balloon):
         super().__init__()
         self.image = pygame.image.load('images/blueballoon.png')  # Path to your balloon image
         self.image = pygame.transform.scale(self.image, (const.CELL_SIZE, const.CELL_SIZE))  # Scale to cell size
-        self.speed = 2  # Speed at which the balloon moves
+        self.speed = 75  # Speed at which the balloon moves
         self.health = 2  # Health of the balloon
