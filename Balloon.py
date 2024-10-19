@@ -34,9 +34,6 @@ class Balloon:
             if abs(self.x - next_x) < tolerance and abs(self.y - next_y) < tolerance:
                 self.current_point_index += 1  # Move to the next point
 
-        if self.is_out_of_bounds():
-            self.destroy()
-
     def draw(self, screen):
         # Draw the balloon on the screen at its current position
         screen.blit(self.image, (self.x, self.y))
@@ -45,16 +42,22 @@ class Balloon:
         # Check if the balloon has gone off the screen (or out of the game area)
         return self.x+const.CELL_SIZE > (const.SCREEN_WIDTH - 2) or self.x <= 0 or self.y <= 0 or self.y + const.CELL_SIZE > (const.SCREEN_HEIGHT-2)
 
-    def take_damage(self, amount):
-        # Reduce health by the amount of damage taken
-        self.health -= amount
-        if self.health <= 0:
-            self.destroy()  # Call the destroy method if health drops to 0
+    def load_image_based_on_health(self):
+        """Load the appropriate balloon image based on the current health."""
+        if self.health == 1:
+            return pygame.image.load('images/redballoon.png')
+        elif self.health == 2:
+            return pygame.image.load('images/blueballoon.png')
+        else:
+            # Add more conditions for other health levels if needed (should happen)
+            return pygame.image.load('images/defaultballoon.png')
 
-    @staticmethod
-    def destroy():
-        # Handle balloon destruction (you might want to remove it from the game)
-        print("Balloon destroyed!")
+    def take_damage(self, damage):
+        """Reduce health by damage taken and update the image if needed."""
+        self.health -= damage
+        if self.health > 0:
+            self.image = self.load_image_based_on_health()  # Update image after taking damage
+            self.image = pygame.transform.scale(self.image, (const.CELL_SIZE, const.CELL_SIZE))  # Scale to cell size
 
 
 class RedBalloon(Balloon):
